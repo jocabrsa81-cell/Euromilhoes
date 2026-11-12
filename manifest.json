@@ -1,0 +1,16 @@
+{
+  "name": "Euro Chave",
+  "short_name": "Euro Chave",
+  "description": "Gera chaves do EuroMilhões com os números e estrelas que mais saíram.",
+  "lang": "pt-PT",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#081229",
+  "theme_color": "#0b1a3a",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

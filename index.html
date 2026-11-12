@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Euro Chave</title>
+<meta name="theme-color" content="#0b1a3a">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#081229; --card:#0f1f45; --card2:#14295a; --line:#22396f;
+  --txt:#eef2ff; --mut:#9fb0d8; --gold:#f5c542; --gold2:#ffdf7e;
+  --blue:#3b6cff; --ok:#3ccf8e; --bad:#ff6b6b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 24px) env(safe-area-inset-left)}
+header{padding:18px 16px 8px;display:flex;align-items:center;gap:12px}
+header .logo{width:40px;height:40px;border-radius:12px;background:radial-gradient(circle at 30% 30%,var(--gold2),var(--gold) 60%,#c99a12);display:grid;place-items:center;color:#081229;font-weight:900;font-size:20px}
+header h1{font-size:20px;margin:0}
+header small{display:block;color:var(--mut);font-size:12px}
+main{max-width:640px;margin:0 auto;padding:0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+.card h2{font-size:15px;margin:0 0 10px;color:var(--gold2);letter-spacing:.3px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.balls{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ball{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:15px;background:radial-gradient(circle at 32% 30%,#fff,#dfe6ff 55%,#a9b8ea);color:#0b1a3a;box-shadow:0 2px 4px #0006}
+.star{width:38px;height:38px;display:grid;place-items:center;font-weight:800;font-size:14px;color:#0b1a3a;background:var(--gold);clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+.sep{width:8px}
+label{font-size:13px;color:var(--mut);display:block;margin-bottom:4px}
+select,input[type=number],textarea,input[type=date]{width:100%;background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit}
+textarea{min-height:110px;font-family:ui-monospace,monospace;font-size:13px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{font:inherit;border:0;border-radius:12px;padding:12px 14px;font-weight:700;cursor:pointer}
+.primary{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#0b1a3a;width:100%;font-size:16px}
+.ghost{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+.small{padding:7px 10px;font-size:13px;border-radius:9px}
+.key{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.key:first-child{border-top:0}
+.key .ball,.key .star{width:31px;height:31px;font-size:13px}
+.key .balls{gap:4px;flex-wrap:nowrap}
+.key .sep{width:4px}
+.key .n{color:var(--mut);font-size:12px;width:18px}
+.mut{color:var(--mut);font-size:13px}
+.status{font-size:13px;color:var(--mut);margin-top:8px;min-height:18px}
+.status.ok{color:var(--ok)} .status.bad{color:var(--bad)}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button{flex:1;padding:8px;font-size:13px;background:var(--card2);color:var(--mut);border:1px solid var(--line)}
+.tabs button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.freq{display:grid;grid-template-columns:30px 1fr 42px;gap:6px;align-items:center;font-size:13px;margin:3px 0}
+.freq .bar{height:12px;border-radius:6px;background:var(--card2);overflow:hidden}
+.freq .bar i{display:block;height:100%;background:var(--blue);border-radius:6px}
+.freq.top .bar i{background:var(--gold)}
+.freq .num{font-weight:700;text-align:right}
+.freq .c{text-align:right;color:var(--mut)}
+details summary{cursor:pointer;color:var(--gold2);font-weight:700;padding:4px 0}
+.note{font-size:12.5px;color:var(--mut);border-left:3px solid var(--gold);padding:6px 10px;background:#0c1838;border-radius:0 8px 8px 0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#000c;color:#fff;padding:9px 14px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">€</div>
+  <div><h1>Euro Chave</h1><small id="sub">A carregar…</small></div>
+</header>
+<main>
+
+  <section class="card" id="lastCard">
+    <h2>Último sorteio</h2>
+    <div id="lastDraw" class="mut">Sem dados ainda.</div>
+  </section>
+
+  <section class="card">
+    <h2>Gerar chaves</h2>
+    <div class="grid2">
+      <div>
+        <label for="period">Período analisado</label>
+        <select id="period">
+          <option value="rules">Desde 2016 (atuais)</option>
+          <option value="all">Todos os sorteios (desde 2004)</option>
+          <option value="last200">Últimos 200 sorteios</option>
+          <option value="last100">Últimos 100 sorteios</option>
+          <option value="last50">Últimos 50 sorteios</option>
+        </select>
+      </div>
+      <div>
+        <label for="mode">Modo</label>
+        <select id="mode">
+          <option value="top">Top puro</option>
+          <option value="weighted">Ponderado</option>
+        </select>
+      </div>
+      <div>
+        <label for="count">Nº de chaves</label>
+        <input type="number" id="count" min="1" max="10" value="3">
+      </div>
+      <div id="poolWrap">
+        <label for="pool">Universo: top N números</label>
+        <input type="number" id="pool" min="5" max="50" value="15">
+      </div>
+    </div>
+    <div style="height:12px"></div>
+    <button class="primary" id="gen">Gerar chaves</button>
+    <div id="keys" style="margin-top:10px"></div>
+  </section>
+
+  <section class="card">
+    <h2>Frequências <span class="mut" id="freqInfo"></span></h2>
+    <div class="tabs">
+      <button id="tabN" class="on">Números (1–50)</button>
+      <button id="tabS">Estrelas (1–12)</button>
+    </div>
+    <div class="row" style="margin-bottom:8px">
+      <button class="ghost small" id="sortF">Ordenar: mais saídos</button>
+    </div>
+    <div id="freqList"></div>
+  </section>
+
+  <section class="card">
+    <h2>Dados</h2>
+    <div class="row">
+      <button class="ghost" id="refresh">↻ Atualizar resultados</button>
+    </div>
+    <div class="status" id="status"></div>
+
+    <details style="margin-top:10px">
+      <summary>Adicionar um sorteio à mão</summary>
+      <div class="grid2" style="margin-top:8px">
+        <div style="grid-column:1/-1"><label>Data</label><input type="date" id="mDate"></div>
+        <div style="grid-column:1/-1"><label>5 números (1–50)</label><input id="mNums" placeholder="ex.: 3 14 22 35 48" style="width:100%;background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit"></div>
+        <div style="grid-column:1/-1"><label>2 estrelas (1–12)</label><input id="mStars" placeholder="ex.: 2 9" style="width:100%;background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit"></div>
+      </div>
+      <div style="height:8px"></div>
+      <button class="ghost" id="mAdd">Adicionar</button>
+    </details>
+
+    <details style="margin-top:6px">
+      <summary>Importar histórico (CSV ou texto)</summary>
+      <p class="mut">Uma linha por sorteio: data, 5 números e 2 estrelas, por esta ordem. Aceita vírgulas, ponto e vírgula ou espaços. Ex.: <code>2026-11-10;3;14;22;35;48;2;9</code></p>
+      <input type="file" id="file" accept=".csv,.txt,text/*" style="margin-bottom:8px">
+      <textarea id="paste" placeholder="Ou cola aqui as linhas…"></textarea>
+      <div style="height:8px"></div>
+      <button class="ghost" id="imp">Importar</button>
+    </details>
+
+    <details style="margin-top:6px">
+      <summary>Apagar dados guardados</summary>
+      <p class="mut">Remove o histórico guardado neste telemóvel. Depois carrega em "Atualizar resultados".</p>
+      <button class="ghost" id="wipe">Apagar histórico</button>
+    </details>
+  </section>
+
+  <p class="note">Nota direta: no EuroMilhões cada sorteio é independente e todas as combinações têm a mesma probabilidade (1 em 139 838 160 para o 1.º prémio). Os "mais saídos" descrevem o passado — não aumentam as hipóteses do próximo sorteio. A app serve para escolher chaves com base no histórico, não para prever.</p>
+  <p class="mut" style="text-align:center;font-size:12px">Fonte dos resultados: euromillions.api.pedromealha.dev (dados de euro-millions.com). Sem ligação à organização do EuroMilhões.</p>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+'use strict';
+const API = 'https://euromillions.api.pedromealha.dev/v1/draws';
+const LS_KEY = 'eurochave_draws_v1';
+const LS_META = 'eurochave_meta_v1';
+const RULES_DATE = '2016-09-27'; // a partir daqui: 12 estrelas
+const $ = id => document.getElementById(id);
+
+let draws = [];      // {date:'YYYY-MM-DD', n:[5], s:[2]}
+let tab = 'n';
+let sortByFreq = true;
+
+// ---------- storage (pode falhar: modo privado, etc.) ----------
+function load(){
+  try{ const r = localStorage.getItem(LS_KEY); if(r) draws = JSON.parse(r) || []; }catch(e){ draws = []; }
+}
+function save(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(draws)); }catch(e){}
+}
+function meta(k,v){
+  try{
+    const m = JSON.parse(localStorage.getItem(LS_META)||'{}');
+    if(v===undefined) return m[k];
+    m[k]=v; localStorage.setItem(LS_META, JSON.stringify(m));
+  }catch(e){ return undefined; }
+}
+
+// ---------- helpers ----------
+const fmtDate = d => { const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; };
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on'),1800); }
+function setStatus(msg, cls){ const s=$('status'); s.textContent=msg; s.className='status'+(cls?' '+cls:''); }
+function valid(d){
+  if(!d || !/^\d{4}-\d{2}-\d{2}$/.test(d.date)) return false;
+  if(!Array.isArray(d.n)||d.n.length!==5||new Set(d.n).size!==5) return false;
+  if(!Array.isArray(d.s)||d.s.length!==2||d.s[0]===d.s[1]) return false;
+  return d.n.every(x=>x>=1&&x<=50) && d.s.every(x=>x>=1&&x<=12);
+}
+function merge(list){
+  const map = new Map(draws.map(d=>[d.date,d]));
+  let added=0;
+  for(const d of list){
+    if(!valid(d)) continue;
+    d.n = d.n.slice().sort((a,b)=>a-b); d.s = d.s.slice().sort((a,b)=>a-b);
+    if(!map.has(d.date)) added++;
+    map.set(d.date,d);
+  }
+  draws = [...map.values()].sort((a,b)=>a.date<b.date?-1:1);
+  save();
+  return added;
+}
+
+// ---------- API ----------
+function normApi(o){
+  const nums = o.numbers || o.balls || o.main_numbers || [];
+  const stars = o.stars || o.lucky_stars || o.luckyStars || [];
+  const date = String(o.date || o.draw_date || '').slice(0,10);
+  return { date, n: nums.map(Number), s: stars.map(Number) };
+}
+async function refresh(manual){
+  setStatus('A obter resultados…');
+  try{
+    let url = API;
+    // incremental: pedir só os sorteios a partir do último que já temos
+    if(draws.length && !manual?.full){
+      const last = draws[draws.length-1].date;
+      url = API + '?dates=' + encodeURIComponent(last + ',' + new Date().toISOString().slice(0,10));
+    }
+    let res = await fetch(url, {cache:'no-store'});
+    let data = res.ok ? await res.json() : null;
+    // se o filtro não for suportado, pedir tudo
+    if(!Array.isArray(data)){
+      res = await fetch(API, {cache:'no-store'});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      data = await res.json();
+    }
+    if(!Array.isArray(data)) throw new Error('Formato inesperado');
+    const added = merge(data.map(normApi));
+    meta('lastFetch', Date.now());
+    setStatus(added ? `${added} sorteio(s) novo(s). Total: ${draws.length}.` : `Já estás atualizado. Total: ${draws.length} sorteios.`, 'ok');
+    render();
+  }catch(e){
+    setStatus('Não foi possível obter os resultados automaticamente ('+e.message+'). Podes importar o histórico ou adicionar o último sorteio à mão em baixo.', 'bad');
+  }
+}
+
+// ---------- import ----------
+function parseText(txt){
+  const out=[];
+  for(const raw of txt.split(/\r?\n/)){
+    const line = raw.trim(); if(!line) continue;
+    let date=null, rest=line;
+    let m = line.match(/(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
+    if(m){ date=`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`; rest=line.replace(m[0],' '); }
+    else if((m=line.match(/(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})/))){ date=`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; rest=line.replace(m[0],' '); }
+    if(!date) continue;
+    const ints = (rest.match(/\d+/g)||[]).map(Number);
+    if(ints.length<7) continue;
+    out.push({date, n:ints.slice(0,5), s:ints.slice(5,7)});
+  }
+  return out;
+}
+
+// ---------- estatística ----------
+function subset(){
+  const p = $('period').value;
+  if(p==='rules') return draws.filter(d=>d.date>=RULES_DATE);
+  if(p==='all') return draws;
+  const k = +p.replace('last','');
+  return draws.slice(-k);
+}
+function freqs(list){
+  const fn = Array(51).fill(0), fs = Array(13).fill(0);
+  for(const d of list){ d.n.forEach(x=>fn[x]++); d.s.forEach(x=>fs[x]++); }
+  // desempate: o que saiu mais recentemente fica à frente
+  const lastN = Array(51).fill(''), lastS = Array(13).fill('');
+  for(const d of list){ d.n.forEach(x=>lastN[x]=d.date); d.s.forEach(x=>lastS[x]=d.date); }
+  const rank = (f,last,max) => Array.from({length:max},(_,i)=>i+1)
+    .map(v=>({v,c:f[v],last:last[v]}))
+    .sort((a,b)=>b.c-a.c || (a.last<b.last?1:a.last>b.last?-1:0) || a.v-b.v);
+  return { n: rank(fn,lastN,50), s: rank(fs,lastS,12) };
+}
+
+function combos(arr,k){
+  const res=[]; const rec=(start,acc)=>{ if(acc.length===k){res.push(acc.slice());return;} for(let i=start;i<arr.length;i++){acc.push(arr[i]);rec(i+1,acc);acc.pop();} };
+  rec(0,[]); return res;
+}
+function weightedPick(items,k){
+  const pool = items.slice(), out=[];
+  while(out.length<k && pool.length){
+    const tot = pool.reduce((a,b)=>a+Math.max(b.c,0.5),0);
+    let r = Math.random()*tot, i=0;
+    for(;i<pool.length;i++){ r-=Math.max(pool[i].c,0.5); if(r<=0) break; }
+    out.push(pool.splice(Math.min(i,pool.length-1),1)[0].v);
+  }
+  return out.sort((a,b)=>a-b);
+}
+
+function generate(){
+  const list = subset();
+  if(list.length<5){ toast('Ainda não há sorteios suficientes.'); return; }
+  const F = freqs(list);
+  const count = Math.max(1, Math.min(10, +$('count').value||1));
+  const keys = [];
+  if($('mode').value==='top'){
+    // 1.ª chave = top 5 + top 2; seguintes = melhores combinações dentro do top 8 / top 4
+    const topN = F.n.slice(0,8), topS = F.s.slice(0,4);
+    const cN = combos(topN,5).map(c=>({c,score:c.reduce((a,b)=>a+b.c,0)})).sort((a,b)=>b.score-a.score);
+    const cS = combos(topS,2).map(c=>({c,score:c.reduce((a,b)=>a+b.c,0)})).sort((a,b)=>b.score-a.score);
+    for(let i=0;i<count;i++){
+      const n = cN[i % cN.length].c.map(x=>x.v).sort((a,b)=>a-b);
+      const s = cS[Math.floor(i / cN.length) % cS.length].c.map(x=>x.v).sort((a,b)=>a-b);
+      keys.push({n,s});
+    }
+  }else{
+    const N = Math.max(5, Math.min(50, +$('pool').value||15));
+    const poolN = F.n.slice(0,N), poolS = F.s.slice(0,Math.max(3,Math.round(N/4)));
+    const seen = new Set(); let guard=0;
+    while(keys.length<count && guard++<500){
+      const k = {n:weightedPick(poolN,5), s:weightedPick(poolS,2)};
+      const id = k.n.join('-')+'|'+k.s.join('-');
+      if(seen.has(id)) continue; seen.add(id); keys.push(k);
+    }
+  }
+  const box = $('keys'); box.innerHTML='';
+  keys.forEach((k,i)=>{
+    const row=document.createElement('div'); row.className='key';
+    row.innerHTML = `<span class="n">${i+1}</span><div class="balls">${k.n.map(x=>`<span class="ball">${x}</span>`).join('')}<span class="sep"></span>${k.s.map(x=>`<span class="star">${x}</span>`).join('')}</div>`;
+    const b=document.createElement('button'); b.className='ghost small'; b.textContent='Copiar';
+    b.onclick=async()=>{ try{ await navigator.clipboard.writeText(`${k.n.join(' ')} + ${k.s.join(' ')}`); toast('Copiado'); }catch(e){ toast('Não foi possível copiar'); } };
+    row.appendChild(b); box.appendChild(row);
+  });
+  if(keys.length>1){
+    const b=document.createElement('button'); b.className='ghost small'; b.style.marginTop='8px'; b.textContent='Copiar todas';
+    b.onclick=async()=>{ try{ await navigator.clipboard.writeText(keys.map((k,i)=>`${i+1}) ${k.n.join(' ')} + ${k.s.join(' ')}`).join('\n')); toast('Copiadas'); }catch(e){ toast('Não foi possível copiar'); } };
+    box.appendChild(b);
+  }
+}
+
+// ---------- render ----------
+function render(){
+  const last = draws[draws.length-1];
+  $('sub').textContent = draws.length ? `${draws.length} sorteios · até ${fmtDate(last.date)}` : 'Sem histórico — carrega em Atualizar';
+  $('lastDraw').innerHTML = last
+    ? `<div class="mut" style="margin-bottom:8px">${fmtDate(last.date)}</div><div class="balls">${last.n.map(x=>`<span class="ball">${x}</span>`).join('')}<span class="sep"></span>${last.s.map(x=>`<span class="star">${x}</span>`).join('')}</div>`
+    : 'Sem dados ainda.';
+  renderFreq();
+}
+function renderFreq(){
+  const list = subset();
+  $('freqInfo').textContent = list.length ? `· ${list.length} sorteios` : '';
+  const F = freqs(list);
+  const items = (tab==='n'?F.n:F.s).slice();
+  if(!sortByFreq) items.sort((a,b)=>a.v-b.v);
+  const max = Math.max(1,...items.map(x=>x.c));
+  const topSet = new Set((tab==='n'?F.n.slice(0,5):F.s.slice(0,2)).map(x=>x.v));
+  $('freqList').innerHTML = items.map(x=>`<div class="freq${topSet.has(x.v)&&x.c?' top':''}"><span class="num">${x.v}</span><span class="bar"><i style="width:${(x.c/max*100).toFixed(1)}%"></i></span><span class="c">${x.c}×</span></div>`).join('');
+  $('poolWrap').style.opacity = $('mode').value==='weighted' ? 1 : .45;
+}
+
+// ---------- eventos ----------
+$('gen').onclick = generate;
+$('period').onchange = renderFreq;
+$('mode').onchange = renderFreq;
+$('tabN').onclick = ()=>{ tab='n'; $('tabN').classList.add('on'); $('tabS').classList.remove('on'); renderFreq(); };
+$('tabS').onclick = ()=>{ tab='s'; $('tabS').classList.add('on'); $('tabN').classList.remove('on'); renderFreq(); };
+$('sortF').onclick = ()=>{ sortByFreq=!sortByFreq; $('sortF').textContent = 'Ordenar: '+(sortByFreq?'mais saídos':'número'); renderFreq(); };
+$('refresh').onclick = ()=>refresh({full:false});
+$('imp').onclick = ()=>{
+  const added = merge(parseText($('paste').value));
+  setStatus(added?`${added} sorteio(s) importado(s). Total: ${draws.length}.`:'Nenhuma linha válida encontrada.', added?'ok':'bad');
+  if(added){ $('paste').value=''; render(); }
+};
+$('file').onchange = e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ const added=merge(parseText(String(r.result))); setStatus(added?`${added} sorteio(s) importado(s). Total: ${draws.length}.`:'Nenhuma linha válida no ficheiro.', added?'ok':'bad'); render(); };
+  r.readAsText(f);
+};
+$('mAdd').onclick = ()=>{
+  const d = {date:$('mDate').value, n:($('mNums').value.match(/\d+/g)||[]).map(Number), s:($('mStars').value.match(/\d+/g)||[]).map(Number)};
+  if(!valid(d)){ toast('Verifica a data, os 5 números e as 2 estrelas'); return; }
+  merge([d]); toast('Sorteio adicionado'); $('mNums').value=''; $('mStars').value=''; render();
+};
+$('wipe').onclick = ()=>{ draws=[]; save(); meta('lastFetch',0); render(); setStatus('Histórico apagado.'); };
+
+// ---------- arranque ----------
+load(); render();
+const lf = meta('lastFetch') || 0;
+if(!draws.length || Date.now()-lf > 6*3600*1000) refresh({full:!draws.length});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+})();
+</script>
+</body>
+</html>
