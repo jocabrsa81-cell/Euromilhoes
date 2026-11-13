@@ -133,6 +133,19 @@ details summary{cursor:pointer;color:var(--gold2);font-weight:700;padding:4px 0}
   </section>
 
 
+
+  <section class="card">
+    <h2>Chaves repetidas</h2>
+    <div id="repBody" class="mut">Sem dados ainda.</div>
+    <details style="margin-top:10px">
+      <summary>Verificar uma chave</summary>
+      <p class="mut">Escreve 5 números e 2 estrelas para ver se essa chave já saiu e qual foi o sorteio mais parecido.</p>
+      <input id="chkIn" placeholder="ex.: 3 14 22 35 48 + 2 9" style="width:100%;background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit">
+      <div style="height:8px"></div>
+      <button class="ghost" id="chkBtn">Verificar</button>
+      <div id="chkOut" class="mut" style="margin-top:8px"></div>
+    </details>
+  </section>
   <section class="card">
     <h2>Recordes do 1.º prémio</h2>
     <div class="tabs" id="recTabs">
@@ -361,7 +374,8 @@ function generate(){
   const box = $('keys'); box.innerHTML='';
   keys.forEach((k,i)=>{
     const row=document.createElement('div'); row.className='key';
-    row.innerHTML = `<span class="n">${i+1}</span><div class="balls">${k.n.map(x=>`<span class="ball">${x}</span>`).join('')}<span class="sep"></span>${k.s.map(x=>`<span class="star">${x}</span>`).join('')}</div>`;
+    const seen = draws.some(d=>d.n.join()===k.n.join()&&d.s.join()===k.s.join());
+    row.innerHTML = `<span class="n">${i+1}${seen?'<br>✔':''}</span><div class="balls">${k.n.map(x=>`<span class="ball">${x}</span>`).join('')}<span class="sep"></span>${k.s.map(x=>`<span class="star">${x}</span>`).join('')}</div>`;
     const b=document.createElement('button'); b.className='ghost small'; b.textContent='Copiar';
     b.onclick=async()=>{ try{ await navigator.clipboard.writeText(`${k.n.join(' ')} + ${k.s.join(' ')}`); toast('Copiado'); }catch(e){ toast('Não foi possível copiar'); } };
     row.appendChild(b); box.appendChild(row);
@@ -381,6 +395,7 @@ function render(){
     ? `<div class="mut" style="margin-bottom:8px">${fmtDate(last.date)}</div><div class="balls">${last.n.map(x=>`<span class="ball">${x}</span>`).join('')}<span class="sep"></span>${last.s.map(x=>`<span class="star">${x}</span>`).join('')}</div>`
     : 'Sem dados ainda.';
   renderFreq();
+  if(typeof renderRep==='function') renderRep();
 }
 function renderFreq(){
   const list = subset();
@@ -420,6 +435,52 @@ $('mAdd').onclick = ()=>{
 };
 $('wipe').onclick = ()=>{ draws=[]; save(); meta('lastFetch',0); render(); setStatus('Histórico apagado.'); };
 
+
+
+// ---------- chaves repetidas ----------
+function repeats(){
+  const full=new Map(), five=new Map(), stars=new Map();
+  for(const d of draws){
+    const a=d.n.join('-'), b=d.s.join('-');
+    for(const [m,k] of [[full,a+'|'+b],[five,a],[stars,b]]){ if(!m.has(k)) m.set(k,[]); m.get(k).push(d); }
+  }
+  const dup = m => [...m.entries()].filter(([k,v])=>v.length>1).sort((x,y)=>y[1].length-x[1].length);
+  return { full:dup(full), five:dup(five), stars:dup(stars) };
+}
+const keyHtml = d => `<div class="balls" style="margin:6px 0">${d.n.map(x=>`<span class="ball" style="width:30px;height:30px;font-size:12px">${x}</span>`).join('')}<span class="sep"></span>${d.s.map(x=>`<span class="star" style="width:30px;height:30px;font-size:12px">${x}</span>`).join('')}</div>`;
+function renderRep(){
+  const box=$('repBody');
+  if(draws.length<2){ box.textContent='Sem dados ainda.'; return; }
+  const R=repeats();
+  let h=`<p style="margin:0 0 8px"><b style="color:var(--txt)">Chave completa (5 + 2):</b> `;
+  h += R.full.length ? `${R.full.length} repetida(s).</p>` + R.full.map(([k,v])=>keyHtml(v[0])+`<div class="mut">${v.map(x=>fmtDate(x.date)).join(' · ')}</div>`).join('')
+                     : `nenhuma chave completa se repetiu em ${draws.length} sorteios.</p>`;
+  h += `<p style="margin:12px 0 8px"><b style="color:var(--txt)">Só os 5 números:</b> `;
+  h += R.five.length ? `${R.five.length} repetição(ões).</p>` + R.five.map(([k,v])=>`<div class="balls" style="margin:6px 0">${v[0].n.map(x=>`<span class="ball" style="width:30px;height:30px;font-size:12px">${x}</span>`).join('')}</div><div class="mut">${v.map(x=>fmtDate(x.date)+' (estrelas '+x.s.join('+')+')').join(' · ')}</div>`).join('')
+                     : `nenhuma combinação de 5 números se repetiu.</p>`;
+  const st=R.stars.slice(0,3);
+  if(st.length) h += `<p style="margin:12px 0 4px"><b style="color:var(--txt)">Par de estrelas mais repetido:</b> ${st.map(([k,v])=>`${k.replace('-',' + ')} (${v.length}×)`).join(', ')}.</p>`;
+  h += `<p class="mut" style="font-size:12px;margin:10px 0 0">Com cerca de 2 000 sorteios, a probabilidade de uma chave completa se repetir é ≈1,4%. Só para os 5 números (2 118 760 combinações) é ≈60%. Uma chave que já saiu tem exatamente a mesma probabilidade de sair outra vez que qualquer outra.</p>`;
+  box.innerHTML=h;
+}
+$('chkBtn').onclick=()=>{
+  const parts=$('chkIn').value.split('+');
+  let n,s;
+  if(parts.length===2){ n=(parts[0].match(/\d+/g)||[]).map(Number); s=(parts[1].match(/\d+/g)||[]).map(Number); }
+  else { const all=($('chkIn').value.match(/\d+/g)||[]).map(Number); n=all.slice(0,5); s=all.slice(5,7); }
+  const k={date:'2000-01-01',n,s};
+  if(!valid(k)){ $('chkOut').textContent='Escreve 5 números (1–50) e 2 estrelas (1–12).'; return; }
+  if(!draws.length){ $('chkOut').textContent='Ainda não há histórico carregado.'; return; }
+  let best=null, bs=-1, exact=[];
+  for(const d of draws){
+    const hn=d.n.filter(x=>n.includes(x)).length, hs=d.s.filter(x=>s.includes(x)).length;
+    if(hn===5&&hs===2) exact.push(d);
+    const sc=hn*10+hs; if(sc>bs){ bs=sc; best={d,hn,hs}; }
+  }
+  $('chkOut').innerHTML = exact.length
+    ? `<b style="color:var(--gold2)">Já saiu!</b> ${exact.map(x=>fmtDate(x.date)).join(', ')}`
+    : `Nunca saiu. Mais parecida: ${fmtDate(best.d.date)} — ${best.hn} número(s) + ${best.hs} estrela(s).${keyHtml(best.d)}`;
+};
 
 // ---------- recordes do 1.º prémio ----------
 // Fonte: euro-millions.com/winners/statistics — todos os jackpots até 10/11/2026.
