@@ -1,6 +1,6 @@
 // Euro Chave — service worker: guarda a app para funcionar offline.
 // Os resultados vêm da API (rede) e ficam guardados no próprio telemóvel.
-const CACHE = 'eurochave-v1';
+const CACHE = 'eurochave-v2';
 const SHELL = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
